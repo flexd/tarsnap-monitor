@@ -1,0 +1,5 @@
+balance_limit: 50
+credentials:
+    pushbullet: yourapikey
+    tarsnap_address: your_tarsnap@email.com
+    tarsnap_password: password
