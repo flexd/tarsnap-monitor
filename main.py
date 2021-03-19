@@ -1,16 +1,16 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import csv
+import argparse
+import sys
+from io import StringIO # for Python 3
+from collections import OrderedDict
+from pushbullet import Pushbullet
+import confuse
 
 import requests
 import urllib3.contrib.pyopenssl
 urllib3.contrib.pyopenssl.inject_into_urllib3()
-import csv
-import StringIO
-from collections import OrderedDict
-from pushbullet import Pushbullet
-import confit
-import argparse
-import sys
 
 template = {
     'balance_limit': float,
@@ -20,7 +20,7 @@ template = {
         'tarsnap_password': str,
     }
 }
-config = confit.LazyConfig('TarsnapMonitor', __name__)
+config = confuse.LazyConfig('TarsnapMonitor', __name__)
 parser = argparse.ArgumentParser(description='Tarsnap monitor')
 parser.add_argument('--address', '-addr', dest='tarsnap_address', metavar='TARSNAP_ADDRESS',
                     help='tarsnap username address')
@@ -42,7 +42,7 @@ args = parser.parse_args()
 config.set_args(args)
 valid = config.get(template)
 if args.verbose:
-    print 'configuration directory is %s' % config.config_dir()
+    print('configuration directory is %s' % config.config_dir())
 
 pb = Pushbullet(valid.credentials.pushbullet)
 
@@ -57,17 +57,17 @@ last_balance = 0.0
 usage_log = OrderedDict()
 if r.status_code == 200:
     if "Password is incorrect" in r.text:
-        print "Password is incorrect."
+        print("Password is incorrect.")
         sys.exit()
-    raw_csv = StringIO.StringIO(r.text)
+    raw_csv = StringIO(r.text)
     for row in csv.DictReader(raw_csv):
         if row["RECTYPE"] == 'Balance':
             balances[row["DATE"]] = float(row["BALANCE"])
         else:
             usage_log[row["DATE"]] = row
-    last_balance = balances.values()[-1]
+    last_balance = next(reversed(balances.values()))
     if last_balance < valid.balance_limit:
         if not args.debug:
             pb.push_note("Tarsnap", "Your Tarsnap balance is under %f. Current balance %f" % (valid.balance_limit, last_balance))
         else:
-            print "balance is under limit, limit: %f, value: %f" % (valid.balance_limit, last_balance)
+            print("balance is under limit, limit: %f, value: %f" % (valid.balance_limit, last_balance))
