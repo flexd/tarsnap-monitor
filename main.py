@@ -52,6 +52,10 @@ r = requests.post('https://www.tarsnap.com/manage.cgi?action=verboseactivity&for
                   data={"address": valid.credentials.tarsnap_address,
                         "password": valid.credentials.tarsnap_password})
 
+# We don't care about the pushes, but we want to use the API every time this script runs so the account does not
+# get deactivated :/
+pushes = pb.get_pushes()
+
 balances = OrderedDict()
 last_balance = 0.0
 usage_log = OrderedDict()
